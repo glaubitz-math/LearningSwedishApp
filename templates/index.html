@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Vocabulary</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Add Vocabulary</h1>
+    <form action="{{ url_for('add_word') }}" method="post">
+        <div class="container">
+            <label for="swedish_word">Swedish Word:</label>
+            <input type="text" id="swedish_word" name="swedish_word" required>
+        </div>
+        <div class="container">
+            <label for="german_word">English Word:</label>
+            <input type="text" id="german_word" name="german_word" required>
+        </div>
+        <button type="submit">Add Word</button>
+    </form>
+    <nav>
+        <a href="{{ url_for('vocabulary') }}">Vocabulary List</a>
+        <a href="{{ url_for('test') }}">Test yourself!</a>
+    </nav>
+</body>
+</html>
+
+

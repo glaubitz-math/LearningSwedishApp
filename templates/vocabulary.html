@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vocabulary List</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <center>
+    <h1>Vocabulary List</h1>
+    <table border="2", style="background-color:#ffffff;">
+        <thead>
+            <tr>
+                <th>
+                    <a href="{{ url_for('vocabulary', sort_by='swedish_word', sort_order='asc' if sort_by != 'swedish_word' or sort_order == 'desc' else 'desc') }}">
+                        Swedish Word {% if sort_by == 'swedish_word' %}{{ '▲' if sort_order == 'asc' else '▼' }}{% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="{{ url_for('vocabulary', sort_by='german_word', sort_order='asc' if sort_by != 'german_word' or sort_order == 'desc' else 'desc') }}">
+                        German Word {% if sort_by == 'german_word' %}{{ '▲' if sort_order == 'asc' else '▼' }}{% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="{{ url_for('vocabulary', sort_by='correct_attempts', sort_order='asc' if sort_by != 'correct_attempts' or sort_order == 'desc' else 'desc') }}">
+                        Correct Attempts {% if sort_by == 'correct_attempts' %}{{ '▲' if sort_order == 'asc' else '▼' }}{% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="{{ url_for('vocabulary', sort_by='incorrect_attempts', sort_order='asc' if sort_by != 'incorrect_attempts' or sort_order == 'desc' else 'desc') }}">
+                        Incorrect Attempts {% if sort_by == 'incorrect_attempts' %}{{ '▲' if sort_order == 'asc' else '▼' }}{% endif %}
+                    </a>
+                </th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for swedish, german, correct_attempts, incorrect_attempts, word_id in words %}
+            <tr>
+                <td>{{ swedish }}</td>
+                <td>{{ german }}</td>
+                <td>{{ correct_attempts }}</td>
+                <td>{{ incorrect_attempts }}</td>
+                <td>
+                    <form action="{{ url_for('delete_word', word_id=word_id) }}" method="post" style="display:inline;">
+                        <button type="submit" class="delete-button">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </center>
+    <nav>
+        <a href="{{ url_for('index') }}">Add More Words</a>
+        <a href="{{ url_for('test') }}">Test yourself!</a>
+    </nav>
+</body>
+</html>
+    
