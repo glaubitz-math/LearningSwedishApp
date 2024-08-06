@@ -1,0 +1,52 @@
+<!-- Updated train_again.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Train Again</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .word-container {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .word-container label {
+            margin-right: 10px;
+            margin-left: 10px;
+        }
+        .word-container input {
+            margin-right: 10px;
+        }
+        .flex-item {
+            flex: 1;
+            min-width: 150px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Train Again</h1>
+    <form action="{{ url_for('submit_train_again') }}" method="post">
+        <ol>
+            {% for word in words %}
+            <li>
+                <div class="word-container">
+                    <div class="flex-item">
+                        <label>{{ word[1] }} (Swedish):</label>
+                        <input type="text" name="swedish_words[]">
+                    </div>
+                    <div class="flex-item">
+                        <label>{{ word[2] }} (German):</label>
+                        <input type="text" name="german_words[]">
+                    </div>
+                    <input type="hidden" name="word_ids[]" value="{{ word[0] }}">
+                </div>
+            </li>
+            {% endfor %}
+        </ol>
+        <button type="submit">Submit</button>
+    </form>
+</body>
+</html>

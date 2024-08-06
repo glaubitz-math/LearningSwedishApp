@@ -153,23 +153,26 @@ def submit_answers():
 
 
 
-
 @app.route('/train_again', methods=['POST'])
 def train_again():
-    print(request.form.getlist())
-    train_word_ids = request.form.getlist('train_word_ids[]')
-
+    word_ids = request.form.getlist('word_ids[]')
 
     with sqlite3.connect('database.db') as conn:
         cursor = conn.cursor()
-        query = 'SELECT id, swedish_word, german_word FROM vocabulary WHERE id IN ({seq})'.format(
-            seq=','.join(['?']*len(train_word_ids)))
-        cursor.execute(query, train_word_ids)
-        words = cursor.fetchall()
 
+        # Loop over each word and check if it was marked as correct or incorrect
+        for word_id in word_ids:
+            result = request.form.get(f'result_{word_id}')
 
+            if result == 'correct':
+                cursor.execute('UPDATE attempts SET correct_attempts = correct_attempts + 1 WHERE word_id = ?', (word_id,))
+            elif result == 'incorrect':
+                cursor.execute('UPDATE attempts SET incorrect_attempts = incorrect_attempts + 1 WHERE word_id = ?', (word_id,))
 
-    return render_template('train_again.html', words=words)
+        conn.commit()
+
+    return redirect(url_for('vocabulary'))
+
 
 @app.route('/submit_train_again', methods=['POST'])
 def submit_train_again():

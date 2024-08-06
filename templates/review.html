@@ -6,19 +6,6 @@
     <title>Review Answers</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        .container {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        .question {
-            flex: 1;
-            font-weight: bold;
-        }
-        .answer, .correct-answer {
-            flex: 1;
-            padding: 5px;
-        }
         .correct {
             color: green;
         }
@@ -29,59 +16,43 @@
 </head>
 <body>
     <h1>Review Answers</h1>
-    <form action="{{ url_for('update_attempts') }}" method="post">
-        <ol>
+    <ol>
         {% for result in results %}
-            <li>
-                <div class="container">
-                    <span class="question">{{ result['question'] }}</span>
-                    <span class="answer" id="user_answer_{{ loop.index0 }}"></span>
-                    <span class="correct-answer" id="correct_answer_{{ loop.index0 }}"></span>
-                </div>
-                <div class="container">
-                    <label>
-                        <input type="radio" name="result_{{ result['word_id'] }}" value="correct" required> Correct
-                    </label>
-                    <label>
-                        <input type="radio" name="result_{{ result['word_id'] }}" value="incorrect" required> Incorrect
-                    </label>
-                    <input type="hidden" name="word_ids[]" value="{{ result['word_id'] }}">
-                </div>
-            </li>
+        <li>
+            <div>
+                <span>{{ result['question'] }}</span>
+                <span class="{{ 'correct' if result['is_correct'] else 'incorrect' }}">{{ result['user_translation'] }}</span>
+                <span>({{ result['correct_translation'] }})</span>
+            </div>
+        </li>
         {% endfor %}
-        </ol>
-        <button type="submit">Submit Results</button>
+    </ol>
+    <h2>Words to Train Again</h2>
+    <form action="{{ url_for('train_again') }}" method="post">
+        <ul>
+            <ol>
+            {% for result in incorrect_words %}
+                <li>
+                    <div class="container">
+                        <span class="question">{{ result['question'] }}</span>
+                        <span class="answer" id="user_answer_{{ loop.index0 }}">{{ result['user_translation'] }}</span>
+                        <span class="correct-answer" id="correct_answer_{{ loop.index0 }}">{{ result['correct_translation'] }}</span>
+                    </div>
+                    <div class="container">
+                        <label>
+                            <input type="radio" name="result_{{ result['word_id'] }}" value="correct" required> Correct
+                        </label>
+                        <label>
+                            <input type="radio" name="result_{{ result['word_id'] }}" value="incorrect" required> Incorrect
+                        </label>
+                        <input type="hidden" name="word_ids[]" value="{{ result['word_id'] }}">
+                    </div>
+                </li>
+            {% endfor %}
+            </ol>
+        </ul>
+        <button type="submit">Train Again</button>
     </form>
-    <nav>
-        <a href="{{ url_for('index') }}">Add More Words</a>
-        <a href="{{ url_for('vocabulary') }}">Vocabulary List</a>
-    </nav>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const results = {{ results|tojson|safe }};
-            results.forEach((result, index) => {
-                const userAnswer = result.user_translation;
-                const correctAnswer = result.correct_translation;
-                const userAnswerElem = document.getElementById("user_answer_" + index);
-                const correctAnswerElem = document.getElementById("correct_answer_" + index);
-
-                let highlightedUserAnswer = '';
-                let highlightedCorrectAnswer = '';
-
-                for (let i = 0; i < Math.max(userAnswer.length, correctAnswer.length); i++) {
-                    if (userAnswer[i] === correctAnswer[i]) {
-                        highlightedUserAnswer += '<span class="correct">' + (userAnswer[i] || '') + '</span>';
-                        highlightedCorrectAnswer += '<span class="correct">' + (correctAnswer[i] || '') + '</span>';
-                    } else {
-                        highlightedUserAnswer += '<span class="incorrect">' + (userAnswer[i] || '') + '</span>';
-                        highlightedCorrectAnswer += '<span class="incorrect">' + (correctAnswer[i] || '') + '</span>';
-                    }
-                }
-
-                userAnswerElem.innerHTML = highlightedUserAnswer;
-                correctAnswerElem.innerHTML = highlightedCorrectAnswer;
-            });
-        });
-    </script>
 </body>
 </html>
+

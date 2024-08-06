@@ -9,6 +9,16 @@
 <body>
     <center>
     <h1>Vocabulary List</h1>
+    <p>Total words: {{ total_words }} (of which {{ not_guessed_correctly }} have not been attempted correctly)</p>
+    <p>Total correct attempts: {{ total_correct_attempts }}</p>
+    <p >Total incorrect attempts: {{ total_incorrect_attempts }}</p>
+    <nav>
+        <a href="{{ url_for('index') }}">Add More Words</a>
+        <a href="{{ url_for('test') }}">Test yourself!</a>
+    </nav>
+    <p style="margin-bottom:1cm;">
+
+    </p>
     <table border="2", style="background-color:#ffffff;">
         <thead>
             <tr>
@@ -52,10 +62,6 @@
         </tbody>
     </table>
     </center>
-    <nav>
-        <a href="{{ url_for('index') }}">Add More Words</a>
-        <a href="{{ url_for('test') }}">Test yourself!</a>
-    </nav>
 </body>
 </html>
     
