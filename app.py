@@ -1,6 +1,14 @@
 from flask import Flask, request, render_template, redirect, url_for
 import sqlite3
 import random
+import re
+
+def normalize_word(word):
+    word = word.lower()
+    word = re.sub(r'[.,]', '', word)  # Remove dots and commas
+    word = re.sub(r'^to\s+', '', word)  # Remove 'to' at the beginning
+    return word
+
 
 app = Flask(__name__)
 
@@ -64,32 +72,42 @@ def vocabulary():
         '''
         cursor.execute(query)
         words = cursor.fetchall()
-    
-    return render_template('vocabulary.html', words=words, sort_by=sort_by, sort_order=sort_order)
 
+        # Calculate totals
+        cursor.execute('SELECT COUNT(*), SUM(correct_attempts), SUM(incorrect_attempts) FROM attempts')
+        totals = cursor.fetchone()
+        total_words = totals[0]
+        total_correct_attempts = totals[1] if totals[1] is not None else 0
+        total_incorrect_attempts = totals[2] if totals[2] is not None else 0
 
-#@app.route('/test')
-#def test():
-#    with sqlite3.connect('database.db') as conn:
-#        cursor = conn.cursor()
-#        cursor.execute('SELECT * FROM vocabulary ORDER BY RANDOM() LIMIT 1')
-#        word = cursor.fetchone()
-#        word_id, swedish_word, german_word = word
-#        language = random.choice(['swedish', 'german'])
-#        if language == 'swedish':
-#            prompt_word = swedish_word
-#            correct_translation = german_word
-#        else:
-#            prompt_word = german_word
-#            correct_translation = swedish_word
+        # Calculate the number of words not guessed correctly
+        cursor.execute('SELECT COUNT(*) FROM vocabulary v LEFT JOIN attempts a ON v.id = a.word_id WHERE a.correct_attempts = 0')
+        not_guessed_correctly = cursor.fetchone()[0]
 
-#    return render_template('test.html', word_id=word_id, prompt_word=prompt_word, correct_translation=correct_translation, language=language)
+    return render_template('vocabulary.html', words=words, sort_by=sort_by, sort_order=sort_order, total_words=total_words, total_correct_attempts=total_correct_attempts, total_incorrect_attempts=total_incorrect_attempts, not_guessed_correctly=not_guessed_correctly)
+
 
 @app.route('/test')
 def test():
     with sqlite3.connect('database.db') as conn:
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM vocabulary ORDER BY RANDOM() LIMIT 100')
+        cursor.execute('SELECT * FROM vocabulary ORDER BY RANDOM() LIMIT 5')
+        words = cursor.fetchall()
+
+    return render_template('test.html', words=words, random=random)
+
+@app.route('/test-zero-attempts')
+def test_zero_attempts():
+    with sqlite3.connect('database.db') as conn:
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT v.id, v.swedish_word, v.german_word
+            FROM vocabulary v
+            LEFT JOIN attempts a ON v.id = a.word_id
+            WHERE a.correct_attempts = 0
+            ORDER BY RANDOM()
+            LIMIT 10
+        ''')
         words = cursor.fetchall()
 
     return render_template('test.html', words=words, random=random)
@@ -97,78 +115,85 @@ def test():
 
 @app.route('/submit-answers', methods=['POST'])
 def submit_answers():
-    answers = request.form.getlist('answers[]')
     word_ids = request.form.getlist('word_ids[]')
+    answers = request.form.getlist('answers[]')
     correct_translations = request.form.getlist('correct_translations[]')
     questions = request.form.getlist('questions[]')
 
     results = []
-    for answer, word_id, correct_translation, question in zip(answers, word_ids, correct_translations, questions):
-        results.append({
-            'word_id': word_id,
-            'user_translation': answer,
-            'correct_translation': correct_translation,
-            'question': question
-        })
-
-    print("Results:", results)  # Debug print
-
-    return render_template('review.html', results=results)
-
-
-
-@app.route('/update-attempts', methods=['POST'])
-def update_attempts():
-    word_ids = request.form.getlist('word_ids[]')
-    correct_count = 0
-    total_count = len(word_ids)
     incorrect_words = []
 
     with sqlite3.connect('database.db') as conn:
         cursor = conn.cursor()
-        for word_id in word_ids:
-            result = request.form.get(f'result_{word_id}')
-            cursor.execute('SELECT swedish_word, german_word FROM vocabulary WHERE id = ?', (word_id,))
-            word = cursor.fetchone()
-            swedish_word, german_word = word[0], word[1]
+        
+        for i, word_id in enumerate(word_ids):
+            user_answer = normalize_word(answers[i])
+            correct_answer = normalize_word(correct_translations[i])
+            is_correct = user_answer == correct_answer
 
-            if result == 'correct':
+            result = {
+                'word_id': word_id,
+                'user_translation': answers[i],
+                'correct_translation': correct_translations[i],
+                'question': questions[i],
+                'is_correct': is_correct
+            }
+            results.append(result)
+            
+            # Update the database based on the correctness
+            if is_correct:
                 cursor.execute('UPDATE attempts SET correct_attempts = correct_attempts + 1 WHERE word_id = ?', (word_id,))
-                correct_count += 1
-            elif result == 'incorrect':
-                cursor.execute('UPDATE attempts SET incorrect_attempts = incorrect_attempts + 1 WHERE word_id = ?', (word_id,))
-                cursor.execute('SELECT swedish_word, german_word FROM vocabulary WHERE id = ?', (word_id,))
-                word = cursor.fetchone()
-                question = swedish_word if random.choice(['swedish', 'german']) == 'swedish' else german_word
-                correct_translation = german_word if question == swedish_word else swedish_word
-                incorrect_words.append({
-                    'word_id': word_id,
-                    'question': question,
-                    'correct_translation': correct_translation
-                })
+            else:
+                incorrect_words.append(result)
         conn.commit()
 
-    return render_template('summary.html', correct_count=correct_count, total_count=total_count, incorrect_words=incorrect_words)
+        print('Submit Answers')
+
+    return render_template('review.html', results=results, incorrect_words=incorrect_words)
 
 
-#   return render_template('result.html', result=result, correct_translation=correct_translation)
 
-@app.route('/retry-incorrect-words', methods=['POST'])
-def retry_incorrect_words():
-    word_ids = request.form.getlist('word_ids[]')
-    retyped_answers = request.form.getlist('retyped_answers[]')
-    correct_translations = request.form.getlist('correct_translations[]')
 
-    results = []
-    for retyped_answer, word_id, correct_translation in zip(retyped_answers, word_ids, correct_translations):
-        results.append({
-            'word_id': word_id,
-            'user_translation': retyped_answer,
-            'correct_translation': correct_translation,
-            'question': correct_translation  # Assuming the question is the correct translation
-        })
+@app.route('/train_again', methods=['POST'])
+def train_again():
+    print(request.form.getlist())
+    train_word_ids = request.form.getlist('train_word_ids[]')
 
-    return render_template('review.html', results=results)
+
+    with sqlite3.connect('database.db') as conn:
+        cursor = conn.cursor()
+        query = 'SELECT id, swedish_word, german_word FROM vocabulary WHERE id IN ({seq})'.format(
+            seq=','.join(['?']*len(train_word_ids)))
+        cursor.execute(query, train_word_ids)
+        words = cursor.fetchall()
+
+
+
+    return render_template('train_again.html', words=words)
+
+@app.route('/submit_train_again', methods=['POST'])
+def submit_train_again():
+    train_word_ids = request.form.getlist('train_word_ids[]')
+    all_word_ids = request.form.getlist('word_ids[]')
+
+    with sqlite3.connect('database.db') as conn:
+        cursor = conn.cursor()
+
+        # Update the incorrect attempts for words that are being trained again
+        for word_id in train_word_ids:
+            cursor.execute('UPDATE attempts SET incorrect_attempts = incorrect_attempts + 1 WHERE word_id = ?', (word_id,))
+
+        # Update the correct attempts for words that are not being trained again
+        words_not_trained_again = set(all_word_ids) - set(train_word_ids)
+        for word_id in words_not_trained_again:
+            cursor.execute('UPDATE attempts SET correct_attempts = correct_attempts + 1 WHERE word_id = ?', (word_id,))
+
+        conn.commit()
+
+    return redirect(url_for('vocabulary'))
+
+
+
 
 
 @app.route('/summary/<int:correct_count>/<int:total_count>')
