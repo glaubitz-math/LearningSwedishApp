@@ -171,7 +171,7 @@ def train_again():
 
         conn.commit()
 
-    return redirect(url_for('vocabulary'))
+    return redirect(url_for('summary'))
 
 
 @app.route('/submit_train_again', methods=['POST'])
@@ -193,7 +193,7 @@ def submit_train_again():
 
         conn.commit()
 
-    return redirect(url_for('vocabulary'))
+    return redirect(url_for('summary'))
 
 
 
