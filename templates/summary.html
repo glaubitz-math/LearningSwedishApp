@@ -13,24 +13,15 @@
 </head>
 <body>
     <h1>Summary</h1>
-    <p>You got {{ correct_count }} out of {{ total_count }} correct.</p>
-    
-    {% if incorrect_words %}
-    <h2>Retype Incorrect Words</h2>
-    <form action="{{ url_for('retry_incorrect_words') }}" method="post">
-        <ol>
+    <p>Correct words: {{ correct_count }}</p>
+    <p>Incorrect words: {{ incorrect_count }}</p>
+
+    <h2>Incorrect Words</h2>
+    <ul>
         {% for word in incorrect_words %}
-            <li>
-                <p>Question: <strong>{{ word['question'] }}</strong></p>
-                <input type="hidden" name="word_ids[]" value="{{ word['word_id'] }}">
-                <input type="hidden" name="correct_translations[]" value="{{ word['correct_translation'] }}">
-                <input type="text" name="retyped_answers[]" required>
-            </li>
+        <li>{{ word[0] }} (Swedish) / {{ word[1] }} (German)</li>
         {% endfor %}
-        </ol>
-        <button type="submit">Submit Retyped Answers</button>
-    </form>
-    {% endif %}
+    </ul>
     
     <nav>
         <a href="{{ url_for('test') }}">Take Another Test</a>

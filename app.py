@@ -157,6 +157,10 @@ def submit_answers():
 def train_again():
     word_ids = request.form.getlist('word_ids[]')
 
+    correct_count = 0
+    incorrect_count = 0
+    incorrect_words = []
+
     with sqlite3.connect('database.db') as conn:
         cursor = conn.cursor()
 
@@ -166,12 +170,22 @@ def train_again():
 
             if result == 'correct':
                 cursor.execute('UPDATE attempts SET correct_attempts = correct_attempts + 1 WHERE word_id = ?', (word_id,))
+                correct_count += 1
             elif result == 'incorrect':
                 cursor.execute('UPDATE attempts SET incorrect_attempts = incorrect_attempts + 1 WHERE word_id = ?', (word_id,))
+                incorrect_count += 1
+
+                # Fetch the incorrect word's data to display on the summary page
+                cursor.execute('SELECT swedish_word, german_word FROM vocabulary WHERE id = ?', (word_id,))
+                word_data = cursor.fetchone()
+                incorrect_words.append(word_data)
 
         conn.commit()
 
-    return redirect(url_for('summary'))
+    # Redirect to the summary page with the counts and incorrect words
+    return redirect(url_for('summary', correct_count=correct_count, incorrect_count=incorrect_count, incorrect_words=[word[0] for word in incorrect_words]))
+
+
 
 
 @app.route('/submit_train_again', methods=['POST'])
@@ -199,10 +213,10 @@ def submit_train_again():
 
 
 
-@app.route('/summary/<int:correct_count>/<int:total_count>')
-def summary(correct_count, total_count):
-    return render_template('summary.html', correct_count=correct_count, total_count=total_count)
-
+@app.route('/summary/<int:correct_count>/<int:incorrect_count>')
+def summary(correct_count, incorrect_count):
+    incorrect_words = request.args.getlist('incorrect_words[]')
+    return render_template('summary.html', correct_count=correct_count, incorrect_count=incorrect_count, incorrect_words=incorrect_words)
 
 @app.route('/delete-word/<int:word_id>', methods=['POST'])
 def delete_word(word_id):
