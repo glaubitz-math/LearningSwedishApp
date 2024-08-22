@@ -1,7 +1,6 @@
-from flask import Flask, request, render_template, redirect, url_for
-import sqlite3
-import random
-import re
+from flask import Flask, request, render_template, redirect, url_for, session
+from urllib.parse import urlencode
+import sqlite3, random, re, secrets, json
 
 def normalize_word(word):
     word = word.lower()
@@ -11,6 +10,9 @@ def normalize_word(word):
 
 
 app = Flask(__name__)
+
+app.secret_key = secrets.token_hex(16)  # Generates a 32-character hexadecimal string
+
 
 # Initialize the database
 def init_db():
@@ -144,18 +146,29 @@ def submit_answers():
             if is_correct:
                 cursor.execute('UPDATE attempts SET correct_attempts = correct_attempts + 1 WHERE word_id = ?', (word_id,))
             else:
+                cursor.execute('UPDATE attempts SET incorrect_attempts = incorrect_attempts + 1 WHERE word_id = ?', (word_id,))
                 incorrect_words.append(result)
+
         conn.commit()
 
-        print('Submit Answers')
+    # Serialize the results to JSON
+    results_json = json.dumps(results)
 
-    return render_template('review.html', results=results, incorrect_words=incorrect_words)
+    return render_template('review.html', results=results_json, incorrect_words=incorrect_words)
 
 
 
 @app.route('/train_again', methods=['POST'])
 def train_again():
     word_ids = request.form.getlist('word_ids[]')
+    results_json = request.form.get('results')
+
+    # Deserialize the JSON string into a Python object
+    try:
+        results = json.loads(results_json) if results_json else []
+    except json.JSONDecodeError as e:
+        print("Error decoding JSON:", e)
+        results = []
 
     correct_count = 0
     incorrect_count = 0
@@ -164,7 +177,7 @@ def train_again():
     with sqlite3.connect('database.db') as conn:
         cursor = conn.cursor()
 
-        # Loop over each word and check if it was marked as correct or incorrect
+        # Process each word based on user's selection
         for word_id in word_ids:
             result = request.form.get(f'result_{word_id}')
 
@@ -180,12 +193,27 @@ def train_again():
                 word_data = cursor.fetchone()
                 incorrect_words.append(word_data)
 
+        # Handle automatically recognized correct/incorrect words from the original results
+        for result in results:
+            if result['word_id'] not in word_ids:  # Avoid double counting the words already processed
+                if result['is_correct']:
+                    cursor.execute('UPDATE attempts SET correct_attempts = correct_attempts + 1 WHERE word_id = ?', (result['word_id'],))
+                    correct_count += 1
+                else:
+                    cursor.execute('UPDATE attempts SET incorrect_attempts = incorrect_attempts + 1 WHERE word_id = ?', (result['word_id'],))
+                    incorrect_count += 1
+                    incorrect_words.append((result['question'], result['correct_translation']))
+
         conn.commit()
 
     # Redirect to the summary page with the counts and incorrect words
-    return redirect(url_for('summary', correct_count=correct_count, incorrect_count=incorrect_count, incorrect_words=[word[0] for word in incorrect_words]))
+    query_params = urlencode({
+        'correct_count': correct_count,
+        'incorrect_count': incorrect_count,
+        'incorrect_words[]': [f'{word[0]} / {word[1]}' for word in incorrect_words]
+    })
 
-
+    return redirect(f'/summary?{query_params}')
 
 
 @app.route('/submit_train_again', methods=['POST'])
@@ -213,8 +241,10 @@ def submit_train_again():
 
 
 
-@app.route('/summary/<int:correct_count>/<int:incorrect_count>')
-def summary(correct_count, incorrect_count):
+@app.route('/summary')
+def summary():
+    correct_count = request.args.get('correct_count', type=int)
+    incorrect_count = request.args.get('incorrect_count', type=int)
     incorrect_words = request.args.getlist('incorrect_words[]')
     return render_template('summary.html', correct_count=correct_count, incorrect_count=incorrect_count, incorrect_words=incorrect_words)
 

@@ -27,8 +27,9 @@
         </li>
         {% endfor %}
     </ol>
-    <h2>Words to Train Again</h2>
+    <h2>Words that might be correct or incorrect</h2>
     <form action="{{ url_for('train_again') }}" method="post">
+        <input type="hidden" name="results" value="{{ results }}">
         <ul>
             <ol>
             {% for result in incorrect_words %}
@@ -51,8 +52,9 @@
             {% endfor %}
             </ol>
         </ul>
-        <button type="submit">Train Again</button>
+        <button type="submit">Submit choice</button>
     </form>
+    
 </body>
 </html>
 
