@@ -2,6 +2,8 @@ from flask import Flask, request, render_template, redirect, url_for, session
 from urllib.parse import urlencode
 import sqlite3, random, re, secrets, json
 
+words_test = 5
+
 def normalize_word(word):
     word = word.lower()
     word = re.sub(r'[.,]', '', word)  # Remove dots and commas
@@ -91,15 +93,17 @@ def vocabulary():
 
 @app.route('/test')
 def test():
+    
     with sqlite3.connect('database.db') as conn:
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM vocabulary ORDER BY RANDOM() LIMIT 5')
+        cursor.execute('SELECT * FROM vocabulary ORDER BY RANDOM() LIMIT ?', (words_test,))
         words = cursor.fetchall()
 
-    return render_template('test.html', words=words, random=random)
+    return render_template('test.html', words=words, random=random, num_words=words_test)
 
 @app.route('/test-zero-attempts')
 def test_zero_attempts():
+    num_words = int(request.args.get('num_words', 5))  # Default to 5 words if not specified
     with sqlite3.connect('database.db') as conn:
         cursor = conn.cursor()
         cursor.execute('''
@@ -108,19 +112,20 @@ def test_zero_attempts():
             LEFT JOIN attempts a ON v.id = a.word_id
             WHERE a.correct_attempts = 0
             ORDER BY RANDOM()
-            LIMIT 10
-        ''')
+            LIMIT ?
+        ''', (num_words,))
         words = cursor.fetchall()
 
-    return render_template('test.html', words=words, random=random)
+    return render_template('test.html', words=words, random=random, num_words=num_words)
 
 
-@app.route('/submit-answers', methods=['POST'])
+@app.route('/submit_answers', methods=['POST'])
 def submit_answers():
     word_ids = request.form.getlist('word_ids[]')
     answers = request.form.getlist('answers[]')
     correct_translations = request.form.getlist('correct_translations[]')
     questions = request.form.getlist('questions[]')
+    num_words = words_test #int(request.form.get('num_words', 5))  # This should be passed as a hidden field in the form
 
     results = []
     incorrect_words = []
@@ -142,19 +147,18 @@ def submit_answers():
             }
             results.append(result)
             
-            # Update the database based on the correctness
             if is_correct:
                 cursor.execute('UPDATE attempts SET correct_attempts = correct_attempts + 1 WHERE word_id = ?', (word_id,))
             else:
-                cursor.execute('UPDATE attempts SET incorrect_attempts = incorrect_attempts + 1 WHERE word_id = ?', (word_id,))
                 incorrect_words.append(result)
 
         conn.commit()
 
-    # Serialize the results to JSON
-    results_json = json.dumps(results)
+    # Calculate number of correct words
+    incorrect_count = len(incorrect_words)
+    correct_count = num_words - incorrect_count
 
-    return render_template('review.html', results=results_json, incorrect_words=incorrect_words)
+    return render_template('review.html', results=results, incorrect_words=incorrect_words, correct_count=correct_count, incorrect_count=incorrect_count)
 
 
 
@@ -200,16 +204,12 @@ def train_again():
                     cursor.execute('UPDATE attempts SET correct_attempts = correct_attempts + 1 WHERE word_id = ?', (result['word_id'],))
                     correct_count += 1
                 else:
-                    cursor.execute('UPDATE attempts SET incorrect_attempts = incorrect_attempts + 1 WHERE word_id = ?', (result['word_id'],))
-                    incorrect_count += 1
                     incorrect_words.append((result['question'], result['correct_translation']))
 
         conn.commit()
 
     # Redirect to the summary page with the counts and incorrect words
     query_params = urlencode({
-        'correct_count': correct_count,
-        'incorrect_count': incorrect_count,
         'incorrect_words[]': [f'{word[0]} / {word[1]}' for word in incorrect_words]
     })
 
@@ -243,9 +243,17 @@ def submit_train_again():
 
 @app.route('/summary')
 def summary():
-    correct_count = request.args.get('correct_count', type=int)
-    incorrect_count = request.args.get('incorrect_count', type=int)
     incorrect_words = request.args.getlist('incorrect_words[]')
+    print(incorrect_words[0].split("', '"))
+    print(incorrect_words[0])
+    print(incorrect_words)
+    if incorrect_words[0] == "[]":
+        incorrect_count = 0
+    else:
+        incorrect_count = len(incorrect_words[0].split("', '"))
+    correct_count = words_test - incorrect_count
+    
+
     return render_template('summary.html', correct_count=correct_count, incorrect_count=incorrect_count, incorrect_words=incorrect_words)
 
 @app.route('/delete-word/<int:word_id>', methods=['POST'])
