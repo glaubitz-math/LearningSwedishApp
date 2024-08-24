@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Awesome Job!</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<center>
+    <div class="awesome-container">
+        <h1>Awesome Job!</h1>
+        <p>You've got all the words correct. Great work!</p>
+    
+    </div>
+</center>
+
+<nav>
+    <a href="{{ url_for('vocabulary') }}">Vocabulary List</a>
+    <a href="{{ url_for('test') }}">Test yourself!</a>
+    <a href="{{ url_for('test_zero_attempts') }}">Test Untested Vocabulary</a>
+</nav>
+
+</body>
+</html>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: url('/static/Images/dog.jpg') no-repeat center center fixed;
+    background-size: cover;
+    color: #333;
+    text-align: center;
+    padding-top: 50px;
+}
+</style>

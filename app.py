@@ -158,6 +158,10 @@ def submit_answers():
     incorrect_count = len(incorrect_words)
     correct_count = num_words - incorrect_count
 
+    # If all words are correct, redirect to the awesome_job page
+    if incorrect_count == 0:
+        return redirect(f'/awesome_job')
+
     return render_template('review.html', results=results, incorrect_words=incorrect_words, correct_count=correct_count, incorrect_count=incorrect_count)
 
 
@@ -177,47 +181,52 @@ def train_again():
     correct_count = 0
     incorrect_count = 0
     incorrect_words = []
+    correct_words = []
 
     with sqlite3.connect('database.db') as conn:
         cursor = conn.cursor()
 
-        # Process each word based on user's selection
         for word_id in word_ids:
             result = request.form.get(f'result_{word_id}')
 
             if result == 'correct':
                 cursor.execute('UPDATE attempts SET correct_attempts = correct_attempts + 1 WHERE word_id = ?', (word_id,))
-                correct_count += 1
             elif result == 'incorrect':
                 cursor.execute('UPDATE attempts SET incorrect_attempts = incorrect_attempts + 1 WHERE word_id = ?', (word_id,))
                 incorrect_count += 1
-
-                # Fetch the incorrect word's data to display on the summary page
                 cursor.execute('SELECT swedish_word, german_word FROM vocabulary WHERE id = ?', (word_id,))
                 word_data = cursor.fetchone()
                 incorrect_words.append(word_data)
 
         # Handle automatically recognized correct/incorrect words from the original results
         for result in results:
-            if result['word_id'] not in word_ids:  # Avoid double counting the words already processed
+            if str(result['word_id']) not in word_ids:
                 if result['is_correct']:
                     cursor.execute('UPDATE attempts SET correct_attempts = correct_attempts + 1 WHERE word_id = ?', (result['word_id'],))
-                    correct_count += 1
                 else:
                     incorrect_words.append((result['question'], result['correct_translation']))
 
         conn.commit()
 
+    # If all answers are correct after retraining, redirect to the awesome_job page
+    if incorrect_count == 0:
+        return redirect(f'/awesome_job')
+
+
     # Flatten the list into multiple parameters
-    params = []
+    params_incorrect = []
     for word in incorrect_words:
-        params.append(('incorrect_words[]', f'{word[0]} / {word[1]}'))
+        params_incorrect.append(('incorrect_words[]', f'{word[0]} / {word[1]}'))
 
     # Encode the parameters into a query string
-    query_string = urlencode(params)
-
+    query_string = urlencode(params_incorrect)
 
     return redirect(f'/summary?{query_string}')
+
+
+@app.route('/awesome_job')
+def awesome_job():
+    return render_template('awesome_job.html')
 
 
 @app.route('/submit_train_again', methods=['POST'])
