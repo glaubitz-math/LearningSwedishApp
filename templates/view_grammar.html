@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Grammar</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .grammar-container {
+            margin-top: 20px;
+        }
+
+        .section-titles-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .section-titles-container h1 {
+            cursor: pointer;
+            padding: 10px;
+            background-color: #f1f1f1;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            text-align: center;
+            width: 48%;
+            transition: background-color 0.3s;
+        }
+
+        .section-titles-container h1:hover, .section-titles-container h1.active {
+            background-color: #ddd;
+        }
+
+        .section-content {
+            display: none;
+            background-color: #f9f9f9;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .section-content.active {
+            display: block;
+        }
+
+        .content-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .content-table th, .content-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a href="/">Home</a>
+            </li>
+            <li class="nav-item">
+                <a href="/add_grammar">Add Grammar</a>
+            </li>
+            <li class="nav-item">
+                <a href="/view_grammar">View Grammar</a>
+            </li>
+        </ul>
+    </nav>
+
+    <div class="grammar-container">
+        <h1>Saved Conjugations and Declensions</h1>
+
+        <div class="section-titles-container">
+            <h1 id="conjugations-heading" onclick="toggleSection('conjugations')">Conjugations</h1>
+            <h1 id="declensions-heading" onclick="toggleSection('declensions')">Declensions</h1>
+        </div>
+
+        <div id="conjugations-content" class="section-content active">
+            {% if conjugations %}
+            <table class="content-table">
+                <thead>
+                    <tr>
+                        <th>Word</th>
+                        <th>Infinitive</th>
+                        <th>Imperative</th>
+                        <th>Present</th>
+                        <th>Preteritum</th>
+                        <th>Supinum</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for conjugation in conjugations %}
+                    <tr>
+                        <td>{{ conjugation[0] }}</td>
+                        <td>{{ conjugation[1] }}</td>
+                        <td>{{ conjugation[2] }}</td>
+                        <td>{{ conjugation[3] }}</td>
+                        <td>{{ conjugation[4] }}</td>
+                        <td>{{ conjugation[5] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>No conjugations found.</p>
+            {% endif %}
+        </div>
+
+        <div id="declensions-content" class="section-content">
+            {% if declensions %}
+            <table class="content-table">
+                <thead>
+                    <tr>
+                        <th>Word</th>
+                        <th>Indefinite Singular</th>
+                        <th>Definite Singular</th>
+                        <th>Indefinite Plural</th>
+                        <th>Definite Plural</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for declension in declensions %}
+                    <tr>
+                        <td>{{ declension[0] }}</td>
+                        <td>{{ declension[1] }}</td>
+                        <td>{{ declension[2] }}</td>
+                        <td>{{ declension[3] }}</td>
+                        <td>{{ declension[4] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>No declensions found.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        function toggleSection(section) {
+            var conjugationsContent = document.getElementById('conjugations-content');
+            var declensionsContent = document.getElementById('declensions-content');
+
+            var conjugationsHeading = document.getElementById('conjugations-heading');
+            var declensionsHeading = document.getElementById('declensions-heading');
+
+            if (section === 'conjugations') {
+                conjugationsContent.classList.add('active');
+                declensionsContent.classList.remove('active');
+                conjugationsHeading.classList.add('active');
+                declensionsHeading.classList.remove('active');
+            } else if (section === 'declensions') {
+                declensionsContent.classList.add('active');
+                conjugationsContent.classList.remove('active');
+                declensionsHeading.classList.add('active');
+                conjugationsHeading.classList.remove('active');
+            }
+        }
+    </script>
+</body>
+</html>

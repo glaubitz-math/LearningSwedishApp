@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Grammar</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a href="/">Home</a>
+            </li>
+            <li class="nav-item">
+                <a href="/add_grammar">Add Grammar</a>
+            </li>
+        </ul>
+    </nav>
+
+    <div class="grammar-container">
+        <h1>Add Grammar</h1>
+
+        <div class="word-selection">
+            <h2>Select a Word</h2>
+            <input type="text" id="inputText" oninput="getSuggestions()" placeholder="Enter Swedish Word">
+            <div class='suggestions-container' id="suggestions"></div>
+
+            <input type="hidden" id="selectedWordId" name="selectedWordId">
+        </div>
+
+        <div class="grammar-choice">
+            <h2>Choose Grammar Type</h2>
+            <button onclick="selectGrammar('conjugation')">Conjugations</button>
+            <button onclick="selectGrammar('declension')">Declensions</button>
+        </div>
+    </div>
+
+    <script>
+function getSuggestions() {
+    var inputText = document.getElementById("inputText").value.toLowerCase();
+
+    fetch(`/get_suggestions?q=${inputText}`)
+        .then(response => response.json())
+        .then(suggestions => {
+            displaySuggestions(suggestions);
+        })
+        .catch(error => {
+            console.error('Error fetching suggestions:', error);
+        });
+}
+
+function displaySuggestions(suggestions) {
+    var suggestionsDiv = document.getElementById("suggestions");
+
+    suggestionsDiv.innerHTML = "";
+
+    for (var i = 0; i < Math.min(suggestions.length, 5); i++) {
+        var suggestionDiv = document.createElement("div");
+        suggestionDiv.className = "suggestion";
+        suggestionDiv.innerHTML = suggestions[i].word;
+        suggestionDiv.onclick = (function(suggestion) {
+            return function() {
+                setWord(suggestion.id, suggestion.word);
+            };
+        })(suggestions[i]);
+        suggestionsDiv.appendChild(suggestionDiv);
+    }
+
+    suggestionsDiv.style.display = suggestions.length > 0 ? "block" : "none";
+}
+
+// Set input variable for the selected word after suggestion selection
+function setWord(wordId, selectedWord) {
+    // Set the selected suggestion as the input value
+    document.getElementById("inputText").value = selectedWord;
+
+    // Set the hidden input value to store the word ID
+    document.getElementById("selectedWordId").value = wordId;
+}
+
+
+        function selectGrammar(grammarType) {
+            var selectedWordId = document.getElementById("selectedWordId").value;
+            if (!selectedWordId) {
+                alert("Please select a word first.");
+                return;
+            }
+
+            if (grammarType === 'conjugation') {
+                window.location.href = `/add_conjugation/${selectedWordId}`;
+            } else if (grammarType === 'declension') {
+                window.location.href = `/add_declension/${selectedWordId}`;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Declension Summary</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a href="/">Home</a>
+            </li>
+            <li class="nav-item">
+                <a href="/add_grammar">Add Grammar</a>
+            </li>
+        </ul>
+    </nav>
+
+    <div class="summary-container">
+        <h1>Declension Summary for '{{ word }}'</h1>
+
+        {% if declension %}
+        <table class="declension-table">
+            <tr>
+                <th>Case</th>
+                <th>Declension</th>
+            </tr>
+            <tr>
+                <td>Indefinite Singular</td>
+                <td>{{ declension[2] }}</td> <!-- Index 1 corresponds to indefinite_singular -->
+            </tr>
+            <tr>
+                <td>Definite Singular</td>
+                <td>{{ declension[3] }}</td> <!-- Index 2 corresponds to definite_singular -->
+            </tr>
+            <tr>
+                <td>Indefinite Plural</td>
+                <td>{{ declension[4] }}</td> <!-- Index 3 corresponds to indefinite_plural -->
+            </tr>
+            <tr>
+                <td>Definite Plural</td>
+                <td>{{ declension[5] }}</td> <!-- Index 4 corresponds to definite_plural -->
+            </tr>
+        </table>
+        {% else %}
+        <p>No declensions found for this word.</p>
+        {% endif %}
+
+        <a href="/add_grammar" class="btn">Add Another Declension</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Conjugation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="conjugation-container">
+        <h1>Add Conjugation for '{{ word }}'</h1>
+        <form method="POST">
+            <label for="infinitive">Infinitive:</label>
+            <input type="text" name="infinitive" required>
+
+            <label for="imperative">Imperative:</label>
+            <input type="text" name="imperative" required>
+
+            <label for="present">Present:</label>
+            <input type="text" name="present" required>
+
+            <label for="preteritum">Preteritum:</label>
+            <input type="text" name="preteritum" required>
+
+            <label for="supinum">Supinum:</label>
+            <input type="text" name="supinum" required>
+
+            <input type="submit" value="Save Conjugation">
+        </form>
+    </div>
+</body>
+</html>

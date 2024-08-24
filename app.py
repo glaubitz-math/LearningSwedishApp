@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, redirect, url_for, session
+from flask import Flask, request, render_template, redirect, url_for, jsonify, session
 from urllib.parse import urlencode
 import sqlite3, random, re, secrets, json
 
@@ -36,6 +36,33 @@ def init_db():
                 FOREIGN KEY(word_id) REFERENCES vocabulary(id)
             )
         ''')
+        # Conjugations table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS conjugations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                word_id INTEGER,
+                infinitive TEXT,
+                imperative TEXT,
+                present TEXT,
+                preteritum TEXT,
+                supinum TEXT,
+                FOREIGN KEY(word_id) REFERENCES vocabulary(id)
+            )
+        ''')
+
+        # Declensions table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS declensions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                word_id INTEGER,
+                indefinite_singular TEXT,
+                definite_singular TEXT,
+                indefinite_plural TEXT,
+                definite_plural TEXT,
+                FOREIGN KEY(word_id) REFERENCES vocabulary(id)
+            )
+        ''')
+
         conn.commit()
 
 init_db()
@@ -89,6 +116,130 @@ def vocabulary():
         not_guessed_correctly = cursor.fetchone()[0]
 
     return render_template('vocabulary.html', words=words, sort_by=sort_by, sort_order=sort_order, total_words=total_words, total_correct_attempts=total_correct_attempts, total_incorrect_attempts=total_incorrect_attempts, not_guessed_correctly=not_guessed_correctly)
+
+@app.route('/add_grammar')
+def add_grammar():
+    return render_template('add_grammar.html')
+
+@app.route('/get_suggestions')
+def get_suggestions():
+    search_term = request.args.get('q', '').lower()
+    with sqlite3.connect('database.db') as conn:
+        cursor = conn.cursor()
+        # Filter words that match the search term
+        cursor.execute("SELECT id, swedish_word FROM vocabulary WHERE LOWER(swedish_word) LIKE ?", (f'%{search_term}%',))
+        words = cursor.fetchall()
+
+    suggestions = [{'id': word[0], 'word': word[1]} for word in words]
+    return jsonify(suggestions)
+
+
+@app.route('/add_conjugation/<int:word_id>', methods=['GET', 'POST'])
+def add_conjugation(word_id):
+    if request.method == 'POST':
+        infinitive = request.form['infinitive']
+        imperative = request.form['imperative']
+        present = request.form['present']
+        preteritum = request.form['preteritum']
+        supinum = request.form['supinum']
+
+        with sqlite3.connect('database.db') as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO conjugations (word_id, infinitive, imperative, present, preteritum, supinum)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (word_id, infinitive, imperative, present, preteritum, supinum))
+            conn.commit()
+
+        return redirect(url_for('summary_conjugation', word_id=word_id))
+
+    # Fetch the word from the vocabulary table
+    with sqlite3.connect('database.db') as conn:
+        cursor = conn.cursor()
+        cursor.execute('SELECT swedish_word FROM vocabulary WHERE id = ?', (word_id,))
+        word = cursor.fetchone()[0]
+
+    return render_template('add_conjugation.html', word=word, word_id=word_id)
+
+
+@app.route('/add_declension/<int:word_id>', methods=['GET', 'POST'])
+def add_declension(word_id):
+    if request.method == 'POST':
+        indefinite_singular = request.form['indefinite_singular']
+        definite_singular = request.form['definite_singular']
+        indefinite_plural = request.form['indefinite_plural']
+        definite_plural = request.form['definite_plural']
+
+        with sqlite3.connect('database.db') as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO declensions (word_id, indefinite_singular, definite_singular, indefinite_plural, definite_plural)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (word_id, indefinite_singular, definite_singular, indefinite_plural, definite_plural))
+            conn.commit()
+
+        return redirect(url_for('summary_declension', word_id=word_id))
+
+    # Fetch the word from the vocabulary table
+    with sqlite3.connect('database.db') as conn:
+        cursor = conn.cursor()
+        cursor.execute('SELECT swedish_word FROM vocabulary WHERE id = ?', (word_id,))
+        word = cursor.fetchone()[0]
+
+    return render_template('add_declension.html', word=word, word_id=word_id)
+
+@app.route('/summary_conjugation/<int:word_id>')
+def summary_conjugation(word_id):
+    with sqlite3.connect('database.db') as conn:
+        cursor = conn.cursor()
+        # Fetch the word
+        cursor.execute('SELECT swedish_word FROM vocabulary WHERE id = ?', (word_id,))
+        word = cursor.fetchone()[0]
+
+        # Fetch the conjugation
+        cursor.execute('SELECT * FROM conjugations WHERE word_id = ?', (word_id,))
+        conjugation = cursor.fetchone()
+    
+    return render_template('summary_conjugation.html', word=word, conjugation=conjugation)
+
+@app.route('/summary_declension/<int:word_id>')
+def summary_declension(word_id):
+    with sqlite3.connect('database.db') as conn:
+        cursor = conn.cursor()
+        # Fetch the word
+        cursor.execute('SELECT swedish_word FROM vocabulary WHERE id = ?', (word_id,))
+        word = cursor.fetchone()[0]
+
+        # Fetch the declension
+        cursor.execute('SELECT * FROM declensions WHERE word_id = ?', (word_id,))
+        declension = cursor.fetchone()
+    
+    return render_template('summary_declension.html', word=word, declension=declension)
+
+@app.route('/view_grammar')
+def view_grammar():
+    with sqlite3.connect('database.db') as conn:
+        cursor = conn.cursor()
+
+        # Fetch all conjugations
+        cursor.execute('''
+            SELECT v.swedish_word, c.infinitive, c.imperative, c.present, c.preteritum, c.supinum
+            FROM conjugations c
+            JOIN vocabulary v ON c.word_id = v.id
+            ORDER BY v.swedish_word
+        ''')
+        conjugations = cursor.fetchall()
+
+        # Fetch all declensions
+        cursor.execute('''
+            SELECT v.swedish_word, d.indefinite_singular, d.definite_singular, d.indefinite_plural, d.definite_plural
+            FROM declensions d
+            JOIN vocabulary v ON d.word_id = v.id
+            ORDER BY v.swedish_word
+        ''')
+        declensions = cursor.fetchall()
+
+    return render_template('view_grammar.html', conjugations=conjugations, declensions=declensions)
 
 
 @app.route('/test')

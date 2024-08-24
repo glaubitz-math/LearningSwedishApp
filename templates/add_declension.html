@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Declension</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="declension-container">
+        <h1>Add Declension for '{{ word }}'</h1>
+        <form method="POST">
+            <label for="indefinite_singular">Indefinite Singular:</label>
+            <input type="text" name="indefinite_singular" required>
+
+            <label for="definite_singular">Definite Singular:</label>
+            <input type="text" name="definite_singular" required>
+
+            <label for="indefinite_plural">Indefinite Plural:</label>
+            <input type="text" name="indefinite_plural" required>
+
+            <label for="definite_plural">Definite Plural:</label>
+            <input type="text" name="definite_plural" required>
+
+            <input type="submit" value="Save Declension">
+        </form>
+    </div>
+</body>
+</html>
