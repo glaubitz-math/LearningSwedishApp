@@ -208,12 +208,16 @@ def train_again():
 
         conn.commit()
 
-    # Redirect to the summary page with the counts and incorrect words
-    query_params = urlencode({
-        'incorrect_words[]': [f'{word[0]} / {word[1]}' for word in incorrect_words]
-    })
+    # Flatten the list into multiple parameters
+    params = []
+    for word in incorrect_words:
+        params.append(('incorrect_words[]', f'{word[0]} / {word[1]}'))
 
-    return redirect(f'/summary?{query_params}')
+    # Encode the parameters into a query string
+    query_string = urlencode(params)
+
+
+    return redirect(f'/summary?{query_string}')
 
 
 @app.route('/submit_train_again', methods=['POST'])
@@ -244,13 +248,8 @@ def submit_train_again():
 @app.route('/summary')
 def summary():
     incorrect_words = request.args.getlist('incorrect_words[]')
-    print(incorrect_words[0].split("', '"))
-    print(incorrect_words[0])
-    print(incorrect_words)
-    if incorrect_words[0] == "[]":
-        incorrect_count = 0
-    else:
-        incorrect_count = len(incorrect_words[0].split("', '"))
+
+    incorrect_count = len(incorrect_words)
     correct_count = words_test - incorrect_count
     
 
