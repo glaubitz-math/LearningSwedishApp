@@ -90,21 +90,29 @@
                         <th>Present</th>
                         <th>Preteritum</th>
                         <th>Supinum</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for conjugation in conjugations %}
                     <tr>
-                        <td>{{ conjugation[0] }}</td>
-                        <td>{{ conjugation[1] }}</td>
-                        <td>{{ conjugation[2] }}</td>
-                        <td>{{ conjugation[3] }}</td>
-                        <td>{{ conjugation[4] }}</td>
-                        <td>{{ conjugation[5] }}</td>
+                        <td>{{ conjugation[1] }}</td> <!-- swedish_word -->
+                        <td>{{ conjugation[2] }}</td> <!-- infinitive -->
+                        <td>{{ conjugation[3] }}</td> <!-- imperative -->
+                        <td>{{ conjugation[4] }}</td> <!-- present -->
+                        <td>{{ conjugation[5] }}</td> <!-- preteritum -->
+                        <td>{{ conjugation[6] }}</td> <!-- supinum -->
+                        <td>
+                            <form action="{{ url_for('delete_conjugation', id=conjugation[0]) }}" method="POST" style="display:inline;">
+                                <button type="submit" class="delete-button">Delete</button>
+                            </form>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+        
+            
             {% else %}
             <p>No conjugations found.</p>
             {% endif %}
@@ -120,20 +128,26 @@
                         <th>Definite Singular</th>
                         <th>Indefinite Plural</th>
                         <th>Definite Plural</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for declension in declensions %}
                     <tr>
-                        <td>{{ declension[0] }}</td>
-                        <td>{{ declension[1] }}</td>
-                        <td>{{ declension[2] }}</td>
-                        <td>{{ declension[3] }}</td>
-                        <td>{{ declension[4] }}</td>
+                        <td>{{ declension[1] }}</td> <!-- swedish_word -->
+                        <td>{{ declension[2] }}</td> <!-- indefinite_singular -->
+                        <td>{{ declension[3] }}</td> <!-- definite_singular -->
+                        <td>{{ declension[4] }}</td> <!-- indefinite_plural -->
+                        <td>{{ declension[5] }}</td> <!-- definite_plural -->
+                        <td>
+                            <form action="{{ url_for('delete_declension', id=declension[0]) }}" method="POST" style="display:inline;">
+                                <button type="submit" class="delete-button">Delete</button>
+                            </form>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
-            </table>
+            </table>            
             {% else %}
             <p>No declensions found.</p>
             {% endif %}

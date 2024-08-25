@@ -221,25 +221,47 @@ def view_grammar():
     with sqlite3.connect('database.db') as conn:
         cursor = conn.cursor()
 
-        # Fetch all conjugations
+        # Fetch all conjugations along with entry id
         cursor.execute('''
-            SELECT v.swedish_word, c.infinitive, c.imperative, c.present, c.preteritum, c.supinum
+            SELECT c.id, v.swedish_word, c.infinitive, c.imperative, c.present, c.preteritum, c.supinum
             FROM conjugations c
             JOIN vocabulary v ON c.word_id = v.id
             ORDER BY v.swedish_word
         ''')
         conjugations = cursor.fetchall()
 
-        # Fetch all declensions
+        print(conjugations)
+
+        # Fetch all declensions along with entry id
         cursor.execute('''
-            SELECT v.swedish_word, d.indefinite_singular, d.definite_singular, d.indefinite_plural, d.definite_plural
+            SELECT d.id, v.swedish_word, d.indefinite_singular, d.definite_singular, d.indefinite_plural, d.definite_plural
             FROM declensions d
             JOIN vocabulary v ON d.word_id = v.id
             ORDER BY v.swedish_word
         ''')
         declensions = cursor.fetchall()
 
+        print(declensions)
+
     return render_template('view_grammar.html', conjugations=conjugations, declensions=declensions)
+
+
+@app.route('/delete_conjugation/<int:id>', methods=['POST'])
+def delete_conjugation(id):
+    with sqlite3.connect('database.db') as conn:
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM conjugations WHERE id = ?', (id,))
+        conn.commit()
+    return redirect(url_for('view_grammar'))
+
+@app.route('/delete_declension/<int:id>', methods=['POST'])
+def delete_declension(id):
+    with sqlite3.connect('database.db') as conn:
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM declensions WHERE id = ?', (id,))
+        conn.commit()
+    return redirect(url_for('view_grammar'))
+
 
 
 @app.route('/test')
