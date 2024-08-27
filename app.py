@@ -264,15 +264,34 @@ def delete_declension(id):
 
 
 
-@app.route('/test')
+@app.route('/test', methods=['GET'])
 def test():
+    test_type = request.args.get('type', 'random')  # Default to 'random' if not specified
     
     with sqlite3.connect('database.db') as conn:
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM vocabulary ORDER BY RANDOM() LIMIT ?', (words_test,))
+        
+        # Fetch words for Random test (select both columns, and randomize direction)
+        cursor.execute('SELECT id, swedish_word, german_word FROM vocabulary ORDER BY RANDOM() LIMIT ?', (words_test,))
         words = cursor.fetchall()
 
-    return render_template('test.html', words=words, random=random, num_words=words_test)
+        # Modify the words list for random direction in the random test
+        if test_type == 'random':
+            randomized_words = []
+            for word in words:
+                if random.choice([True, False]):
+                    # English to Swedish
+                    randomized_words.append((word[0], word[2], word[1]))  # (id, english_word, swedish_word)
+                else:
+                    # Swedish to English
+                    randomized_words.append((word[0], word[1], word[2]))  # (id, swedish_word, english_word)
+            words = randomized_words
+        elif test_type == 'english_to_swedish':
+            words = [(word[0], word[2], word[1]) for word in words]  # (id, english_word, swedish_word)
+        elif test_type == 'swedish_to_english':
+            words = [(word[0], word[1], word[2])]  # (id, swedish_word, german_word)
+
+    return render_template('test.html', words=words, test_type=test_type)
 
 @app.route('/test-zero-attempts')
 def test_zero_attempts():

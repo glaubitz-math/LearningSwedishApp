@@ -3,33 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vocabulary Test</title>
+    <title>Vocabulary Test - {{ test_type.replace('_', ' ').capitalize() }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h1>Vocabulary Test</h1>
+    <h1>Vocabulary Test - {{ test_type.replace('_', ' ').capitalize() }}</h1>
     <form action="{{ url_for('submit_answers') }}" method="post">
         <ol>
-        {% for word in words %}
-            {% set language = random.choice(['swedish', 'german']) %}
-            {% if language == 'swedish' %}
+            {% for word in words %}
                 <li>
-                    <p><strong>{{ word[1] }} (Swedish)</strong></p>
-                    <input type="hidden" name="word_ids[]" value="{{ word[0] }}">
+                    <label>{{ word[1] }} ({{ 'English' if 'english' in test_type else 'Swedish' }}):</label>
+                    <input type="text" name="answers[]" placeholder="Translation" required>
+                    <input type="hidden" name="questions[]" value="{{ word[1] }}">
                     <input type="hidden" name="correct_translations[]" value="{{ word[2] }}">
-                    <input type="hidden" name="questions[]" value="{{ word[1] }} (Swedish)">
-                    <input type="text" name="answers[]" required>
-                </li>
-            {% else %}
-                <li>
-                    <p><strong>{{ word[2] }} (English)</strong></p>
                     <input type="hidden" name="word_ids[]" value="{{ word[0] }}">
-                    <input type="hidden" name="correct_translations[]" value="{{ word[1] }}">
-                    <input type="hidden" name="questions[]" value="{{ word[2] }} (English)">
-                    <input type="text" name="answers[]" required>
                 </li>
-            {% endif %}
-        {% endfor %}
+            {% endfor %}
         </ol>
         <button type="submit">Submit Answers</button>
     </form>

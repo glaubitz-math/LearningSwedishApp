@@ -23,6 +23,12 @@
         <a href="{{ url_for('vocabulary') }}">Vocabulary List</a>
         <a href="{{ url_for('test') }}">Test yourself!</a>
         <a href="{{ url_for('test_zero_attempts') }}">Test Untested Vocabulary</a>
+        <div>
+            <a href="{{ url_for('test', type='english_to_swedish') }}">English to Swedish</a>
+            <a href="{{ url_for('test', type='swedish_to_english') }}">Swedish to English</a>
+            <a href="{{ url_for('test', type='random') }}">Random</a>
+        </div>
+        
     </nav>
 </body>
 </html>
