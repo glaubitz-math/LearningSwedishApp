@@ -87,11 +87,23 @@ def add_word():
 
 @app.route('/vocabulary')
 def vocabulary():
-    sort_by = request.args.get('sort_by', 'swedish_word')  # Default sort by Swedish word
-    sort_order = request.args.get('sort_order', 'asc')  # Default sort order ascending
+    # Get sorting parameters
+    sort_by = request.args.get('sort_by', 'swedish_word')
+    sort_order = request.args.get('sort_order', 'asc')
+
+    # Get pagination parameters
+    per_page = int(request.args.get('per_page', 25))  # Default to 25 items per page
+    page = int(request.args.get('page', 1))
+    offset = (page - 1) * per_page
 
     with sqlite3.connect('database.db') as conn:
         cursor = conn.cursor()
+
+        # Get the total number of vocabulary items
+        cursor.execute('SELECT COUNT(*) FROM vocabulary')
+        total_items = cursor.fetchone()[0]
+
+        # Get the sorted vocabulary items for the current page
         query = f'''
             SELECT v.swedish_word, v.german_word, 
                    COALESCE(a.correct_attempts, 0) AS correct_attempts, 
@@ -100,8 +112,9 @@ def vocabulary():
             FROM vocabulary v
             LEFT JOIN attempts a ON v.id = a.word_id
             ORDER BY {sort_by} {sort_order}
+            LIMIT ? OFFSET ?
         '''
-        cursor.execute(query)
+        cursor.execute(query, (per_page, offset))
         words = cursor.fetchall()
 
         # Calculate totals
@@ -115,7 +128,19 @@ def vocabulary():
         cursor.execute('SELECT COUNT(*) FROM vocabulary v LEFT JOIN attempts a ON v.id = a.word_id WHERE a.correct_attempts = 0')
         not_guessed_correctly = cursor.fetchone()[0]
 
-    return render_template('vocabulary.html', words=words, sort_by=sort_by, sort_order=sort_order, total_words=total_words, total_correct_attempts=total_correct_attempts, total_incorrect_attempts=total_incorrect_attempts, not_guessed_correctly=not_guessed_correctly)
+    total_pages = (total_items + per_page - 1) // per_page  # Calculate total pages
+
+    return render_template('vocabulary.html', 
+                           words=words, 
+                           page=page, 
+                           per_page=per_page, 
+                           total_pages=total_pages, 
+                           total_words=total_words, 
+                           total_correct_attempts=total_correct_attempts, 
+                           total_incorrect_attempts=total_incorrect_attempts, 
+                           not_guessed_correctly=not_guessed_correctly, 
+                           sort_by=sort_by, 
+                           sort_order=sort_order)
 
 @app.route('/add_grammar')
 def add_grammar():

@@ -8,62 +8,85 @@
 </head>
 <body>
     <center>
-    <h1>Vocabulary List</h1>
-    <p>Total words: {{ total_words }} (of which {{ not_guessed_correctly }} have not been attempted correctly)</p>
-    <p>Total correct attempts: {{ total_correct_attempts }}</p>
-    <p >Total incorrect attempts: {{ total_incorrect_attempts }}</p>
-    <nav>
-        <a href="{{ url_for('index') }}">Add More Words</a>
-        <a href="{{ url_for('test') }}">Test yourself!</a>
-    </nav>
-    <p style="margin-bottom:1cm;">
+        <h1>Vocabulary List</h1>
+        <p>Total words: {{ total_words }} (of which {{ not_guessed_correctly }} have not been attempted correctly)</p>
+        <p>Total correct attempts: {{ total_correct_attempts }}</p>
+        <p>Total incorrect attempts: {{ total_incorrect_attempts }}</p>
+        <nav>
+            <a href="{{ url_for('index') }}">Add More Words</a>
+            <a href="{{ url_for('test') }}">Test yourself!</a>
+        </nav>
+        <p style="margin-bottom:1cm;"></p>
 
-    </p>
-    <div class="section-content active">
-    <table class="content-table">
-        <thead>
-            <tr>
-                <th>
-                    <a href="{{ url_for('vocabulary', sort_by='swedish_word', sort_order='asc' if sort_by != 'swedish_word' or sort_order == 'desc' else 'desc') }}">
-                        Swedish Word {% if sort_by == 'swedish_word' %}{{ '▲' if sort_order == 'asc' else '▼' }}{% endif %}
-                    </a>
-                </th>
-                <th>
-                    <a href="{{ url_for('vocabulary', sort_by='german_word', sort_order='asc' if sort_by != 'german_word' or sort_order == 'desc' else 'desc') }}">
-                        German Word {% if sort_by == 'german_word' %}{{ '▲' if sort_order == 'asc' else '▼' }}{% endif %}
-                    </a>
-                </th>
-                <th>
-                    <a href="{{ url_for('vocabulary', sort_by='correct_attempts', sort_order='asc' if sort_by != 'correct_attempts' or sort_order == 'desc' else 'desc') }}">
-                        Correct Attempts {% if sort_by == 'correct_attempts' %}{{ '▲' if sort_order == 'asc' else '▼' }}{% endif %}
-                    </a>
-                </th>
-                <th>
-                    <a href="{{ url_for('vocabulary', sort_by='incorrect_attempts', sort_order='asc' if sort_by != 'incorrect_attempts' or sort_order == 'desc' else 'desc') }}">
-                        Incorrect Attempts {% if sort_by == 'incorrect_attempts' %}{{ '▲' if sort_order == 'asc' else '▼' }}{% endif %}
-                    </a>
-                </th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for swedish, german, correct_attempts, incorrect_attempts, word_id in words %}
-            <tr>
-                <td>{{ swedish }}</td>
-                <td>{{ german }}</td>
-                <td>{{ correct_attempts }}</td>
-                <td>{{ incorrect_attempts }}</td>
-                <td>
-                    <form action="{{ url_for('delete_word', word_id=word_id) }}" method="post" style="display:inline;">
-                        <button type="submit" class="delete-button">Delete</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+        <!-- Pagination and Items Per Page Selection -->
+        <form method="get" action="{{ url_for('vocabulary') }}">
+            <label for="per_page">Show:</label>
+            <select name="per_page" id="per_page" onchange="this.form.submit()">
+                <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+                <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+            </select>
+            <input type="hidden" name="sort_by" value="{{ sort_by }}">
+            <input type="hidden" name="sort_order" value="{{ sort_order }}">
+            <input type="hidden" name="page" value="1">
+        </form>
+
+        <!-- Vocabulary Table -->
+        <div class="section-content active">
+            <table class="content-table">
+                <thead>
+                    <tr>
+                        <th>
+                            <a href="{{ url_for('vocabulary', sort_by='swedish_word', sort_order='asc' if sort_by != 'swedish_word' or sort_order == 'desc' else 'desc', per_page=per_page) }}">
+                                Swedish Word {% if sort_by == 'swedish_word' %}{{ '▲' if sort_order == 'asc' else '▼' }}{% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ url_for('vocabulary', sort_by='german_word', sort_order='asc' if sort_by != 'german_word' or sort_order == 'desc' else 'desc', per_page=per_page) }}">
+                                German Word {% if sort_by == 'german_word' %}{{ '▲' if sort_order == 'asc' else '▼' }}{% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ url_for('vocabulary', sort_by='correct_attempts', sort_order='asc' if sort_by != 'correct_attempts' or sort_order == 'desc' else 'desc', per_page=per_page) }}">
+                                Correct Attempts {% if sort_by == 'correct_attempts' %}{{ '▲' if sort_order == 'asc' else '▼' }}{% endif %}
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ url_for('vocabulary', sort_by='incorrect_attempts', sort_order='asc' if sort_by != 'incorrect_attempts' or sort_order == 'desc' else 'desc', per_page=per_page) }}">
+                                Incorrect Attempts {% if sort_by == 'incorrect_attempts' %}{{ '▲' if sort_order == 'asc' else '▼' }}{% endif %}
+                            </a>
+                        </th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for swedish, german, correct_attempts, incorrect_attempts, word_id in words %}
+                    <tr>
+                        <td>{{ swedish }}</td>
+                        <td>{{ german }}</td>
+                        <td>{{ correct_attempts }}</td>
+                        <td>{{ incorrect_attempts }}</td>
+                        <td>
+                            <form action="{{ url_for('delete_word', word_id=word_id) }}" method="post" style="display:inline;">
+                                <button type="submit" class="delete-button">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="pagination">
+            {% if page > 1 %}
+            <a href="{{ url_for('vocabulary', page=page-1, per_page=per_page, sort_by=sort_by, sort_order=sort_order) }}">&laquo; Previous</a>
+            {% endif %}
+            <span>Page {{ page }} of {{ total_pages }}</span>
+            {% if page < total_pages %}
+            <a href="{{ url_for('vocabulary', page=page+1, per_page=per_page, sort_by=sort_by, sort_order=sort_order) }}">Next &raquo;</a>
+            {% endif %}
+        </div>
     </center>
 </body>
 </html>
-    
