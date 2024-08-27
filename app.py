@@ -243,32 +243,68 @@ def summary_declension(word_id):
 
 @app.route('/view_grammar')
 def view_grammar():
+    # Get parameters for pagination and sorting
+    per_page = int(request.args.get('per_page', 10))  # Default to 10 items per page
+    page = int(request.args.get('page', 1))
+    offset = (page - 1) * per_page
+    sort_by = request.args.get('sort_by', 'swedish_word')
+    sort_order = request.args.get('sort_order', 'asc')
+    section = request.args.get('section', 'conjugations')  # Determine which section is being viewed
+
     with sqlite3.connect('database.db') as conn:
         cursor = conn.cursor()
 
-        # Fetch all conjugations along with entry id
-        cursor.execute('''
+        conjugations = []
+        declensions = []
+        total_conjugations = 0
+        total_declensions = 0
+
+
+        # Fetch conjugations with sorting and pagination
+        query_conjugations = f'''
             SELECT c.id, v.swedish_word, c.infinitive, c.imperative, c.present, c.preteritum, c.supinum
             FROM conjugations c
             JOIN vocabulary v ON c.word_id = v.id
-            ORDER BY v.swedish_word
-        ''')
+            ORDER BY {sort_by} {sort_order}
+            LIMIT ? OFFSET ?
+        '''
+        cursor.execute(query_conjugations, (per_page, offset))
         conjugations = cursor.fetchall()
 
-        print(conjugations)
+        cursor.execute('SELECT COUNT(*) FROM conjugations')
+        total_conjugations = cursor.fetchone()[0]
 
-        # Fetch all declensions along with entry id
-        cursor.execute('''
+
+        # Fetch declensions with sorting and pagination
+        query_declensions = f'''
             SELECT d.id, v.swedish_word, d.indefinite_singular, d.definite_singular, d.indefinite_plural, d.definite_plural
             FROM declensions d
             JOIN vocabulary v ON d.word_id = v.id
-            ORDER BY v.swedish_word
-        ''')
+            ORDER BY {sort_by} {sort_order}
+            LIMIT ? OFFSET ?
+        '''
+        cursor.execute(query_declensions, (per_page, offset))
         declensions = cursor.fetchall()
 
-        print(declensions)
+        cursor.execute('SELECT COUNT(*) FROM declensions')
+        total_declensions = cursor.fetchone()[0]
 
-    return render_template('view_grammar.html', conjugations=conjugations, declensions=declensions)
+    total_pages_conjugations = (total_conjugations + per_page - 1) // per_page
+    total_pages_declensions = (total_declensions + per_page - 1) // per_page
+
+    print(conjugations)
+    print(declensions)
+
+    return render_template('view_grammar.html', 
+                           conjugations=conjugations, 
+                           declensions=declensions, 
+                           page=page, 
+                           per_page=per_page, 
+                           total_pages_conjugations=total_pages_conjugations, 
+                           total_pages_declensions=total_pages_declensions, 
+                           sort_by=sort_by, 
+                           sort_order=sort_order, 
+                           section=section)
 
 
 @app.route('/delete_conjugation/<int:id>', methods=['POST'])

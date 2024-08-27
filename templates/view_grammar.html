@@ -53,6 +53,29 @@
             text-align: left;
             border-bottom: 1px solid #ddd;
         }
+
+        .pagination {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .pagination a {
+            margin: 0 5px;
+            padding: 5px 10px;
+            text-decoration: none;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            background-color: #f1f1f1;
+        }
+
+        .pagination span {
+            margin: 0 5px;
+            padding: 5px 10px;
+        }
+
+        .pagination a:hover {
+            background-color: #ddd;
+        }
     </style>
 </head>
 <body>
@@ -75,16 +98,35 @@
         <h1>Saved Conjugations and Declensions</h1>
 
         <div class="section-titles-container">
-            <h1 id="conjugations-heading" onclick="toggleSection('conjugations')">Conjugations</h1>
-            <h1 id="declensions-heading" onclick="toggleSection('declensions')">Declensions</h1>
+            <h1 id="conjugations-heading" onclick="toggleSection('conjugations')" class="{{ 'active' if section == 'conjugations' }}">Conjugations</h1>
+            <h1 id="declensions-heading" onclick="toggleSection('declensions')" class="{{ 'active' if section == 'declensions' }}">Declensions</h1>
         </div>
 
-        <div id="conjugations-content" class="section-content active">
+        <!-- Conjugations Section -->
+        <div id="conjugations-content" class="section-content {% if section == 'conjugations' %}active{% endif %}">
+            <!-- Items Per Page and Sorting -->
+            <form method="get" action="{{ url_for('view_grammar') }}">
+                <label for="per_page">Show:</label>
+                <select name="per_page" id="per_page" onchange="this.form.submit()">
+                    <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                    <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+                    <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                </select>
+                <input type="hidden" name="sort_by" value="{{ sort_by }}">
+                <input type="hidden" name="sort_order" value="{{ sort_order }}">
+                <input type="hidden" name="page" value="1">
+                <input type="hidden" name="section" value="conjugations">
+            </form>
+
             {% if conjugations %}
             <table class="content-table">
                 <thead>
                     <tr>
-                        <th>Word</th>
+                        <th>
+                            <a href="{{ url_for('view_grammar', sort_by='swedish_word', sort_order='asc' if sort_by != 'swedish_word' or sort_order == 'desc' else 'desc', per_page=per_page, section='conjugations') }}">
+                                Word {% if sort_by == 'swedish_word' %}{{ '▲' if sort_order == 'asc' else '▼' }}{% endif %}
+                            </a>
+                        </th>
                         <th>Infinitive</th>
                         <th>Imperative</th>
                         <th>Present</th>
@@ -111,48 +153,86 @@
                     {% endfor %}
                 </tbody>
             </table>
-        
-            
             {% else %}
             <p>No conjugations found.</p>
             {% endif %}
+
+            <!-- Pagination Controls for Conjugations -->
+            <div class="pagination">
+                {% if page > 1 %}
+                <a href="{{ url_for('view_grammar', page=page-1, per_page=per_page, sort_by=sort_by, sort_order=sort_order, section='conjugations') }}">&laquo; Previous</a>
+                {% endif %}
+                <span>Page {{ page }} of {{ total_pages_conjugations }}</span>
+                {% if page < total_pages_conjugations %}
+                <a href="{{ url_for('view_grammar', page=page+1, per_page=per_page, sort_by=sort_by, sort_order=sort_order, section='conjugations') }}">Next &raquo;</a>
+                {% endif %}
+            </div>
         </div>
 
-        <div id="declensions-content" class="section-content">
-            {% if declensions %}
-            <table class="content-table">
-                <thead>
-                    <tr>
-                        <th>Word</th>
-                        <th>Indefinite Singular</th>
-                        <th>Definite Singular</th>
-                        <th>Indefinite Plural</th>
-                        <th>Definite Plural</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for declension in declensions %}
-                    <tr>
-                        <td>{{ declension[1] }}</td> <!-- swedish_word -->
-                        <td>{{ declension[2] }}</td> <!-- indefinite_singular -->
-                        <td>{{ declension[3] }}</td> <!-- definite_singular -->
-                        <td>{{ declension[4] }}</td> <!-- indefinite_plural -->
-                        <td>{{ declension[5] }}</td> <!-- definite_plural -->
-                        <td>
-                            <form action="{{ url_for('delete_declension', id=declension[0]) }}" method="POST" style="display:inline;">
-                                <button type="submit" class="delete-button">Delete</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>            
-            {% else %}
-            <p>No declensions found.</p>
-            {% endif %}
-        </div>
+<!-- Declensions Section -->
+<div id="declensions-content" class="section-content {% if section == 'declensions' %}active{% endif %}">
+    <!-- Items Per Page and Sorting -->
+    <form method="get" action="{{ url_for('view_grammar') }}">
+        <label for="per_page">Show:</label>
+        <select name="per_page" id="per_page" onchange="this.form.submit()">
+            <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+            <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+            <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+        </select>
+        <input type="hidden" name="sort_by" value="{{ sort_by }}">
+        <input type="hidden" name="sort_order" value="{{ sort_order }}">
+        <input type="hidden" name="page" value="1">
+        <input type="hidden" name="section" value="declensions">
+    </form>
+
+    {% if declensions %}
+    <table class="content-table">
+        <thead>
+            <tr>
+                <th>
+                    <a href="{{ url_for('view_grammar', sort_by='swedish_word', sort_order='asc' if sort_by != 'swedish_word' or sort_order == 'desc' else 'desc', per_page=per_page, section='declensions') }}">
+                        Word {% if sort_by == 'swedish_word' %}{{ '▲' if sort_order == 'asc' else '▼' }}{% endif %}
+                    </a>
+                </th>
+                <th>Indefinite Singular</th>
+                <th>Definite Singular</th>
+                <th>Indefinite Plural</th>
+                <th>Definite Plural</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for declension in declensions %}
+            <tr>
+                <td>{{ declension[1] }}</td> <!-- swedish_word -->
+                <td>{{ declension[2] }}</td> <!-- indefinite_singular -->
+                <td>{{ declension[3] }}</td> <!-- definite_singular -->
+                <td>{{ declension[4] }}</td> <!-- indefinite_plural -->
+                <td>{{ declension[5] }}</td> <!-- definite_plural -->
+                <td>
+                    <form action="{{ url_for('delete_declension', id=declension[0]) }}" method="POST" style="display:inline;">
+                        <button type="submit" class="delete-button">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No declensions found.</p>
+    {% endif %}
+
+    <!-- Pagination Controls for Declensions -->
+    <div class="pagination">
+        {% if page > 1 %}
+        <a href="{{ url_for('view_grammar', page=page-1, per_page=per_page, sort_by=sort_by, sort_order=sort_order, section='declensions') }}">&laquo; Previous</a>
+        {% endif %}
+        <span>Page {{ page }} of {{ total_pages_declensions }}</span>
+        {% if page < total_pages_declensions %}
+        <a href="{{ url_for('view_grammar', page=page+1, per_page=per_page, sort_by=sort_by, sort_order=sort_order, section='declensions') }}">Next &raquo;</a>
+        {% endif %}
     </div>
+</div>
 
     <script>
         function toggleSection(section) {
