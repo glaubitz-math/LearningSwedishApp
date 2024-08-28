@@ -1,6 +1,7 @@
 from flask import Flask, request, render_template, redirect, url_for, jsonify, session
 from urllib.parse import urlencode
 import sqlite3, random, re, secrets, json
+from random import choice
 
 words_test = 5
 
@@ -370,6 +371,91 @@ def test_zero_attempts():
         words = cursor.fetchall()
 
     return render_template('test.html', words=words, random=random, num_words=num_words)
+
+
+@app.route('/grammar_test')
+def grammar_test():
+    words_test = 5  # Number of words to test for each section
+    with sqlite3.connect('database.db') as conn:
+        cursor = conn.cursor()
+
+        # Select random conjugations
+        cursor.execute('SELECT id, infinitive, imperative, present, preteritum, supinum FROM conjugations ORDER BY RANDOM() LIMIT ?', (words_test,))
+        conjugations = cursor.fetchall()
+
+        # Select random declensions
+        cursor.execute('SELECT id, indefinite_singular, definite_singular, indefinite_plural, definite_plural FROM declensions ORDER BY RANDOM() LIMIT ?', (words_test,))
+        declensions = cursor.fetchall()
+
+    # Prepare the test questions by pre-filling one random field and leaving the rest empty
+    conjugation_test = []
+    for conjugation in conjugations:
+        fields = ['infinitive', 'imperative', 'present', 'preteritum', 'supinum']
+        filled_field = choice(fields)
+        question = {field: conjugation[i+1] if field == filled_field else '' for i, field in enumerate(fields)}
+        question['id'] = conjugation[0]
+        question['filled_field'] = filled_field
+        conjugation_test.append(question)
+
+    declension_test = []
+    for declension in declensions:
+        fields = ['indefinite_singular', 'definite_singular', 'indefinite_plural', 'definite_plural']
+        filled_field = choice(fields)
+        question = {field: declension[i+1] if field == filled_field else '' for i, field in enumerate(fields)}
+        question['id'] = declension[0]
+        question['filled_field'] = filled_field
+        declension_test.append(question)
+
+    return render_template('grammar_test.html', conjugation_test=conjugation_test, declension_test=declension_test)
+
+@app.route('/submit_grammar_test', methods=['POST'])
+def submit_grammar_test():
+    conjugation_answers = request.form.getlist('conjugation_answers[]')
+    conjugation_ids = request.form.getlist('conjugation_ids[]')
+    conjugation_fields = request.form.getlist('conjugation_fields[]')
+    print(conjugation_fields)
+
+    declension_answers = request.form.getlist('declension_answers[]')
+    declension_ids = request.form.getlist('declension_ids[]')
+    declension_fields = request.form.getlist('declension_fields[]')
+
+    correct_conjugations = []
+    incorrect_conjugations = []
+
+    correct_declensions = []
+    incorrect_declensions = []
+
+    with sqlite3.connect('database.db') as conn:
+        cursor = conn.cursor()
+
+        # Check conjugation answers
+        print(conjugation_ids)
+        for i in range(len(conjugation_ids)):
+            cursor.execute(f'SELECT * FROM conjugations WHERE id = ?', (conjugation_ids[i],))
+            correct_answer = cursor.fetchone()[2:]
+            user_answer = tuple(conjugation_answers[5*i:5*(i+1)])
+            if user_answer == correct_answer:
+                correct_conjugations.append((conjugation_ids[i], user_answer))
+            else:
+                incorrect_conjugations.append((conjugation_ids[i], correct_answer, user_answer))
+
+        # Check declension answers
+        for i in range(len(declension_ids)):
+            field_to_check = declension_fields[i]
+            cursor.execute(f'SELECT * FROM declensions WHERE id = ?', (declension_ids[i],))
+            correct_answer = cursor.fetchone()[2:]
+            user_answer = tuple(declension_answers[4*i:4*(i+1)])
+            if user_answer == correct_answer:
+                correct_declensions.append((declension_ids[i], user_answer))
+            else:
+                incorrect_declensions.append((declension_ids[i], correct_answer, user_answer))
+
+    return render_template('grammar_review.html', 
+                            correct_conjugations=correct_conjugations, 
+                            incorrect_conjugations=incorrect_conjugations, 
+                            correct_declensions=correct_declensions, 
+                            incorrect_declensions=incorrect_declensions)
+
 
 
 @app.route('/submit_answers', methods=['POST'])

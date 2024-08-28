@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grammar Test Review</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Grammar Test Review</h1>
+
+    <h2>Correct Conjugations</h2>
+    <ul>
+        {% for id, answer in correct_conjugations %}
+        <li>{{ answer }}</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Incorrect Conjugations</h2>
+    <ul>
+        {% for id, correct_answer, user_answer in incorrect_conjugations %}
+        <li>{{ user_answer }} (Correct: {{ correct_answer }})</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Correct Declensions</h2>
+    <ul>
+        {% for id, answer in correct_declensions %}
+        <li>{{ answer }}</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Incorrect Declensions</h2>
+    <ul>
+        {% for id, correct_answer, user_answer in incorrect_declensions %}
+        <li>{{ user_answer }} (Correct: {{ correct_answer }})</li>
+        {% endfor %}
+    </ul>
+
+    <nav>
+        <a href="{{ url_for('grammar_test') }}">Take Another Grammar Test</a>
+        <a href="{{ url_for('index') }}">Home</a>
+    </nav>
+</body>
+</html>

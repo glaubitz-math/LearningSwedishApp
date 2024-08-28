@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grammar Test</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Grammar Test</h1>
+    <form action="{{ url_for('submit_grammar_test') }}" method="post">
+        <h2>Conjugations</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Infinitive</th>
+                    <th>Imperative</th>
+                    <th>Present</th>
+                    <th>Preteritum</th>
+                    <th>Supinum</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for conjugation in conjugation_test %}
+                <tr>
+                    <td><input type="text" name="conjugation_answers[]" {% if conjugation['filled_field'] == 'infinitive' %} value="{{ conjugation['infinitive'] }}" readonly {% else %} placeholder="Fill in" {% endif %}></td>
+                    <td><input type="text" name="conjugation_answers[]" {% if conjugation['filled_field'] == 'imperative' %} value="{{ conjugation['imperative'] }}" readonly {% else %} placeholder="Fill in" {% endif %}></td>
+                    <td><input type="text" name="conjugation_answers[]" {% if conjugation['filled_field'] == 'present' %} value="{{ conjugation['present'] }}" readonly {% else %} placeholder="Fill in" {% endif %}></td>
+                    <td><input type="text" name="conjugation_answers[]" {% if conjugation['filled_field'] == 'preteritum' %} value="{{ conjugation['preteritum'] }}" readonly {% else %} placeholder="Fill in" {% endif %}></td>
+                    <td><input type="text" name="conjugation_answers[]" {% if conjugation['filled_field'] == 'supinum' %} value="{{ conjugation['supinum'] }}" readonly {% else %} placeholder="Fill in" {% endif %}></td>
+                    <input type="hidden" name="conjugation_ids[]" value="{{ conjugation['id'] }}">
+                    <input type="hidden" name="conjugation_fields[]" value="{{ conjugation['filled_field'] }}">
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h2>Declensions</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Indefinite Singular</th>
+                    <th>Definite Singular</th>
+                    <th>Indefinite Plural</th>
+                    <th>Definite Plural</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for declension in declension_test %}
+                <tr>
+                    <td><input type="text" name="declension_answers[]" {% if declension['filled_field'] == 'indefinite_singular' %} value="{{ declension['indefinite_singular'] }}" readonly {% else %} placeholder="Fill in" {% endif %}></td>
+                    <td><input type="text" name="declension_answers[]" {% if declension['filled_field'] == 'definite_singular' %} value="{{ declension['definite_singular'] }}" readonly {% else %} placeholder="Fill in" {% endif %}></td>
+                    <td><input type="text" name="declension_answers[]" {% if declension['filled_field'] == 'indefinite_plural' %} value="{{ declension['indefinite_plural'] }}" readonly {% else %} placeholder="Fill in" {% endif %}></td>
+                    <td><input type="text" name="declension_answers[]" {% if declension['filled_field'] == 'definite_plural' %} value="{{ declension['definite_plural'] }}" readonly {% else %} placeholder="Fill in" {% endif %}></td>
+                    <input type="hidden" name="declension_ids[]" value="{{ declension['id'] }}">
+                    <input type="hidden" name="declension_fields[]" value="{{ declension['filled_field'] }}">
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <button type="submit">Submit Answers</button>
+    </form>
+</body>
+</html>
